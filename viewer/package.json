@@ -1,0 +1,18 @@
+{
+  "name": "pose-keypoint-visualizer",
+  "version": "1.0.0",
+  "description": "3D pose keypoint and skeleton visualizer powered by Three.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.169.0",
+    "postprocessing": "^6.36.3"
+  },
+  "devDependencies": {
+    "vite": "^5.4.8"
+  }
+}

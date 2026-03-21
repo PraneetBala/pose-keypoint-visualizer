@@ -1,0 +1,7 @@
+# Core — required for convert.py
+numpy>=1.24
+
+# Optional — required for server/serve.py /convert endpoint (NPY upload)
+fastapi>=0.111
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
