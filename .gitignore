@@ -2,6 +2,7 @@ node_modules/
 viewer/dist/
 __pycache__/
 *.pyc
+*.npy
 .env
 .DS_Store
 *.egg-info/

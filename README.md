@@ -1,25 +1,25 @@
 # Pose Keypoint Visualizer
 
-A visually rich 3D viewer for human and animal pose keypoints.
-Supports **skeletons**, **point clouds**, animated sequences, and live `.npy` upload.
-
-![preview](docs/preview.png)
+A visually rich 3D viewer for human and animal pose keypoints — built with Three.js and Python.
 
 ---
 
 ## Features
 
+- **Always a point cloud** — keypoints are rendered as 3D points every time
+- **Edges via adjacency matrix** — provide an adjacency list and the viewer draws connections between specified point pairs (skeleton emerges from this)
+- **No adjacency? No problem** — renders as a pure floating point cloud
 - **Drag & drop** `.json` or `.npy` files directly onto the browser
-- **Skeleton mode** — provide an adjacency list and joints are connected with glowing bones
-- **Point cloud mode** — no adjacency needed; renders joints as a floating point cloud
 - **Animated playback** — scrub timeline, play/pause, step frame-by-frame
-- **Checkerboard ground plane** — infinite shader-based grid, fades at horizon
-- **Camera auto-mode** — stationary skeletons → orbit, moving skeletons → follow root
+- **Checkerboard ground plane** — infinite GLSL shader-based grid, fades at horizon
+- **Camera auto-mode** — stationary poses → free orbit, moving poses → follows root joint
 - **Motion trails** — ghost of previous N frames per joint
-- **Post-processing** — ACES tonemapping + Unreal Bloom via `postprocessing`
+- **Post-processing** — ACES tonemapping + Unreal Bloom
 - **Themes** — Cyan, Amber, Neon, Warm
-- **Joint labels** — render joint names as sprite overlays
-- **Python converter** — turn any `.npy` file into the visualizer's JSON format
+- **Joint labels** — render joint names as overlays
+- **Python converter** — turn any `.npy` file into the visualizer JSON format
+
+**Requirements:** Node.js ≥ 18, Python ≥ 3.9 (only needed for `.npy` files)
 
 ---
 
@@ -135,17 +135,15 @@ You can also pass a raw edge list array: `[[0,1],[1,2],...]`
 python examples/generate_examples.py
 ```
 
-This creates:
-- `examples/coco_walk.npy` — 90-frame walking cycle
-- `examples/tpose_static.npy` — single T-pose frame
-- `examples/point_cloud_sphere.npy` — animated point cloud (no skeleton)
+This creates `.npy` files and converts them to `.json` in one step.
 
-Then convert:
-```bash
-python convert.py examples/coco_walk.npy \
-  --adj examples/adjacency_coco17.json \
-  --out examples/coco_walk.json
-```
+Pre-converted JSON files are already included in `examples/` — drag them straight into the browser:
+
+| File | Description |
+|---|---|
+| `examples/coco_walk.json` | 90-frame COCO walking cycle, 17 joints |
+| `examples/tpose_static.json` | Single T-pose frame, 17 joints |
+| `examples/point_cloud_sphere.json` | 60-frame animated point cloud, 64 points, no adjacency |
 
 ---
 
