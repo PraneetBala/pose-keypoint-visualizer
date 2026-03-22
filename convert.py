@@ -32,15 +32,31 @@ def load_npy(path: pathlib.Path) -> np.ndarray:
     return arr.astype(float)
 
 
+def parse_adjacency(adj) -> list:
+    """Accept NxN binary matrix OR [[i,j],...] edge list. Always returns edge list."""
+    a = np.array(adj)
+
+    if a.ndim == 2 and a.shape[0] == a.shape[1]:
+        # NxN binary/weighted matrix → extract upper-triangle edges
+        rows, cols = np.nonzero(a)
+        edges = [[int(r), int(c)] for r, c in zip(rows, cols) if r < c]
+        print(f"[INFO] Adjacency matrix {a.shape} -> {len(edges)} edges")
+        return edges
+
+    # Edge list [[i,j], ...]
+    if a.ndim == 2 and a.shape[1] == 2:
+        return [[int(e[0]), int(e[1])] for e in adj]
+
+    sys.exit("[ERROR] Adjacency must be an NxN binary matrix or [[i,j],...] edge list.")
+
+
 def load_adjacency(path: pathlib.Path) -> list:
     with open(path) as f:
         adj = json.load(f)
-    # Accept either [[i,j], ...] or {"edges": [[i,j], ...]}
+    # Unwrap dict wrappers e.g. {"edges": [...]} or {"adjacency": [...]}
     if isinstance(adj, dict):
-        adj = adj.get("edges", adj.get("adjacency", []))
-    if not isinstance(adj, list):
-        sys.exit("[ERROR] Adjacency must be a list of [i, j] pairs.")
-    return adj
+        adj = adj.get("edges", adj.get("adjacency", adj.get("matrix", [])))
+    return parse_adjacency(adj)
 
 
 def load_labels(path: pathlib.Path) -> list:
@@ -93,7 +109,7 @@ def main():
     parser = argparse.ArgumentParser(description="Convert pose data to visualizer JSON.")
     parser.add_argument("input", help=".npy or .json file")
     parser.add_argument("--adj", "--adjacency", dest="adj",
-                        help="Adjacency JSON file ([[i,j], ...])")
+                        help="Adjacency JSON: NxN binary matrix or [[i,j],...] edge list")
     parser.add_argument("--fps", type=float, default=30.0)
     parser.add_argument("--labels", help="Text file with one joint label per line")
     parser.add_argument("--out", "-o", help="Output .json path (default: <input>.json)")

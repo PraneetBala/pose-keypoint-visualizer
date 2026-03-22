@@ -118,14 +118,26 @@ python convert.py existing.json --out normalised.json
 
 ## Adjacency files
 
+Two formats are accepted — the converter auto-detects which one you provide:
+
+**NxN binary matrix** (standard in GNN / pose estimation literature):
+```json
+[[0,1,0],[1,0,1],[0,1,0]]
+```
+
+**Edge list** (sparse, easier to write by hand):
+```json
+[[0,1],[1,2]]
+```
+
+Both can be wrapped in a dict: `{"edges": [...]}`, `{"adjacency": [...]}`, or `{"matrix": [...]}`.
+
 Pre-built adjacency files are in `examples/`:
 
 | File | Description |
 |---|---|
 | `adjacency_coco17.json` | COCO 17-joint human skeleton |
 | `adjacency_macaque.json` | Macaque 17-joint skeleton |
-
-You can also pass a raw edge list array: `[[0,1],[1,2],...]`
 
 ---
 
