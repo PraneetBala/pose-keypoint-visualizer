@@ -29,7 +29,7 @@ A visually rich 3D viewer for human and animal pose keypoints — built with Thr
 |---|---|
 | ![Start](docs/screenshot_start.jpg) | ![Example](docs/screenshot_example.jpg) |
 
-▶ [Watch demo](docs/demo.avi)
+▶ [Watch demo](docs/demo.mp4)
 
 ---
 
