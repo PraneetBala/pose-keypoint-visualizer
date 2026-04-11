@@ -1,23 +1,23 @@
 # Pose Keypoint Visualizer
 
-A visually rich 3D viewer for human and animal pose keypoints — built with Three.js and Python.
+A visually rich 3D viewer for human and animal pose keypoints, built with Three.js and Python.
 
 ---
 
 ## Features
 
-- **Always a point cloud** — keypoints are rendered as 3D points every time
-- **Edges via adjacency matrix** — provide an adjacency list and the viewer draws connections between specified point pairs (skeleton emerges from this)
-- **No adjacency? No problem** — renders as a pure floating point cloud
+- **Always a point cloud**: keypoints are rendered as 3D points every time
+- **Edges via adjacency matrix**: provide an adjacency list and the viewer draws connections between specified point pairs (skeleton emerges from this)
+- **No adjacency? No problem**: renders as a pure floating point cloud
 - **Drag & drop** `.json` or `.npy` files directly onto the browser
-- **Animated playback** — scrub timeline, play/pause, step frame-by-frame
-- **Checkerboard ground plane** — infinite GLSL shader-based grid, fades at horizon
-- **Camera auto-mode** — stationary poses → free orbit, moving poses → follows root joint
-- **Motion trails** — ghost of previous N frames per joint
-- **Post-processing** — ACES tonemapping + Unreal Bloom
-- **Themes** — Cyan, Amber, Neon, Warm
-- **Joint labels** — render joint names as overlays
-- **Python converter** — turn any `.npy` file into the visualizer JSON format
+- **Animated playback**: scrub timeline, play/pause, step frame-by-frame
+- **Checkerboard ground plane**: infinite GLSL shader-based grid, fades at horizon
+- **Camera auto-mode**: stationary poses → free orbit, moving poses → follows root joint
+- **Motion trails**: ghost of previous N frames per joint
+- **Post-processing**: ACES tonemapping + Unreal Bloom
+- **Themes**: Cyan, Amber, Neon, Warm
+- **Joint labels**: render joint names as overlays
+- **Python converter**: turn any `.npy` file into the visualizer JSON format
 
 **Requirements:** Node.js ≥ 18, Python ≥ 3.9 (only needed for `.npy` files)
 
