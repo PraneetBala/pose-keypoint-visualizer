@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  base: '/pose-keypoint-visualizer/',
   root: '.',
   build: {
     outDir: 'dist',
