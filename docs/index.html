@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pose Keypoint Visualizer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #080b14;
+      color: #e0e6f0;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+      overflow: hidden;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+    }
+
+    /* ── Drop overlay ── */
+    #drop-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: #080b14;
+      z-index: 100;
+      transition: opacity 0.4s;
+    }
+    #drop-overlay.hidden { opacity: 0; pointer-events: none; }
+
+    #drop-zone {
+      width: 420px;
+      max-width: 90vw;
+      border: 2px dashed #2a3a5c;
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: rgba(255,255,255,0.02);
+    }
+    #drop-zone:hover, #drop-zone.drag-over {
+      border-color: #00d4ff;
+      background: rgba(0, 212, 255, 0.04);
+    }
+    #drop-zone .icon { font-size: 48px; margin-bottom: 12px; }
+    #drop-zone h2 { font-size: 18px; color: #c8d8f0; margin-bottom: 8px; }
+    #drop-zone p { font-size: 12px; color: #4a6080; line-height: 1.6; }
+
+    .file-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .file-btn {
+      background: rgba(0,212,255,0.08);
+      border: 1px solid #1a3a5c;
+      color: #80c8e0;
+      padding: 8px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .file-btn:hover { background: rgba(0,212,255,0.16); border-color: #00d4ff; color: #00d4ff; }
+    #load-example-btn {
+      background: rgba(120,80,255,0.08);
+      border-color: #2a1a5c;
+      color: #a080e0;
+    }
+    #load-example-btn:hover { background: rgba(120,80,255,0.18); border-color: #7850ff; color: #a080ff; }
+
+    /* ── Control panel ── */
+    #panel {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 260px;
+      background: rgba(8, 11, 20, 0.85);
+      border: 1px solid rgba(0,212,255,0.15);
+      border-radius: 12px;
+      backdrop-filter: blur(12px);
+      padding: 16px;
+      z-index: 50;
+      display: none;
+    }
+    #panel.visible { display: block; }
+    #panel h3 {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #00d4ff;
+      margin-bottom: 14px;
+      border-bottom: 1px solid rgba(0,212,255,0.15);
+      padding-bottom: 8px;
+    }
+    .ctrl-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .ctrl-row label { font-size: 12px; color: #8090a8; }
+
+    /* Toggle switch */
+    .toggle { position: relative; width: 36px; height: 20px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: #1a2a40;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-track::before {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      left: 3px; top: 3px;
+      background: #4a6080;
+      border-radius: 50%;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .toggle input:checked + .toggle-track { background: rgba(0,212,255,0.2); }
+    .toggle input:checked + .toggle-track::before {
+      transform: translateX(16px);
+      background: #00d4ff;
+    }
+
+    /* Select */
+    .ctrl-select {
+      background: rgba(0,212,255,0.06);
+      border: 1px solid #1a3a5c;
+      color: #c0d0e8;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    /* Color swatch */
+    .color-swatch {
+      width: 24px; height: 24px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+      cursor: pointer;
+    }
+
+    .section-title {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #3a5070;
+      margin: 14px 0 8px;
+    }
+
+    /* ── Playback bar ── */
+    #playback {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: rgba(8, 11, 20, 0.85);
+      border: 1px solid rgba(0,212,255,0.15);
+      border-radius: 40px;
+      backdrop-filter: blur(12px);
+      padding: 10px 20px;
+      z-index: 50;
+      white-space: nowrap;
+    }
+    #playback.visible { display: flex; }
+
+    #play-btn {
+      background: none;
+      border: none;
+      color: #00d4ff;
+      font-size: 18px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 6px;
+      transition: color 0.2s;
+    }
+    #play-btn:hover { color: #80e8ff; }
+
+    #timeline {
+      width: 220px;
+      accent-color: #00d4ff;
+      cursor: pointer;
+    }
+
+    #frame-info {
+      font-size: 11px;
+      color: #4a6080;
+      min-width: 80px;
+      text-align: right;
+    }
+
+    /* ── Info badge ── */
+    #info-badge {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      background: rgba(8,11,20,0.85);
+      border: 1px solid rgba(0,212,255,0.1);
+      border-radius: 8px;
+      backdrop-filter: blur(12px);
+      padding: 10px 14px;
+      font-size: 11px;
+      color: #4a6080;
+      display: none;
+      z-index: 50;
+      line-height: 1.7;
+    }
+    #info-badge.visible { display: block; }
+    #info-badge span { color: #80a8c8; }
+
+    /* ── Reopen button ── */
+    #reopen-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 16px;
+      background: rgba(8,11,20,0.85);
+      border: 1px solid rgba(0,212,255,0.15);
+      border-radius: 8px;
+      backdrop-filter: blur(12px);
+      padding: 8px 14px;
+      font-size: 11px;
+      color: #4a6080;
+      cursor: pointer;
+      display: none;
+      z-index: 50;
+      font-family: inherit;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    #reopen-btn:hover { color: #00d4ff; border-color: rgba(0,212,255,0.4); }
+    #reopen-btn.visible { display: block; }
+
+    input[type="range"] { cursor: pointer; }
+
+    /* ── Spinner ── */
+    #spinner {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8,11,20,0.7);
+      z-index: 200;
+    }
+    #spinner.visible { display: flex; }
+    .spin-ring {
+      width: 48px; height: 48px;
+      border: 3px solid rgba(0,212,255,0.15);
+      border-top-color: #00d4ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <script type="module" crossorigin src="/assets/index-CkF1T2tO.js"></script>
+</head>
+<body>
+
+<!-- Three.js canvas -->
+<div id="canvas-container"></div>
+
+<!-- Loading spinner -->
+<div id="spinner"><div class="spin-ring"></div></div>
+
+<!-- Drop / open overlay -->
+<div id="drop-overlay">
+  <div id="drop-zone">
+    <div class="icon">🦴</div>
+    <h2>Pose Keypoint Visualizer</h2>
+    <p>Drop a <strong>.json</strong> or <strong>.npy</strong> file here<br/>
+       Optionally include an adjacency JSON for skeleton mode<br/>
+       Otherwise renders as point cloud</p>
+  </div>
+  <div class="file-row">
+    <button class="file-btn" id="open-json-btn">Open JSON</button>
+    <button class="file-btn" id="open-npy-btn">Upload NPY</button>
+    <button class="file-btn" id="load-example-btn">Load Example</button>
+  </div>
+  <input type="file" id="file-json" accept=".json" style="display:none" />
+  <input type="file" id="file-npy"  accept=".npy"  style="display:none" />
+</div>
+
+<!-- Control panel -->
+<div id="panel">
+  <h3>Settings</h3>
+
+  <div class="section-title">Render</div>
+  <div class="ctrl-row">
+    <label>Show Edges</label>
+    <label class="toggle">
+      <input type="checkbox" id="ctrl-edges" checked />
+      <span class="toggle-track"></span>
+    </label>
+  </div>
+  <div id="ctrl-edges-note" style="font-size:10px;color:#2a4060;margin-bottom:8px;text-align:right">
+    edges require adjacency matrix
+  </div>
+  <div class="ctrl-row">
+    <label>Theme</label>
+    <select class="ctrl-select" id="ctrl-theme">
+      <option value="cyan">Cyan</option>
+      <option value="amber">Amber</option>
+      <option value="neon">Neon</option>
+      <option value="warm">Warm</option>
+    </select>
+  </div>
+  <div class="ctrl-row">
+    <label>Joint Size</label>
+    <input type="range" id="ctrl-joint-size" min="0.2" max="3" step="0.1" value="1" style="width:100px" />
+  </div>
+  <div class="ctrl-row">
+    <label>Bone Width</label>
+    <input type="range" id="ctrl-bone-width" min="0.1" max="2" step="0.1" value="1" style="width:100px" />
+  </div>
+  <div class="ctrl-row">
+    <label>Bloom</label>
+    <input type="range" id="ctrl-bloom" min="0" max="2" step="0.1" value="0.8" style="width:100px" />
+  </div>
+
+  <div class="section-title">Scene</div>
+  <div class="ctrl-row">
+    <label>Ground Plane</label>
+    <label class="toggle">
+      <input type="checkbox" id="ctrl-ground" checked />
+      <span class="toggle-track"></span>
+    </label>
+  </div>
+  <div class="ctrl-row">
+    <label>Labels</label>
+    <label class="toggle">
+      <input type="checkbox" id="ctrl-labels" />
+      <span class="toggle-track"></span>
+    </label>
+  </div>
+  <div class="ctrl-row">
+    <label>Motion Trail</label>
+    <label class="toggle">
+      <input type="checkbox" id="ctrl-trail" />
+      <span class="toggle-track"></span>
+    </label>
+  </div>
+  <div class="ctrl-row">
+    <label>Trail Length</label>
+    <input type="range" id="ctrl-trail-len" min="1" max="30" step="1" value="8" style="width:100px" />
+  </div>
+
+  <div class="section-title">Camera</div>
+  <div class="ctrl-row">
+    <label>Mode</label>
+    <select class="ctrl-select" id="ctrl-cam">
+      <option value="auto">Auto</option>
+      <option value="orbit">Free Orbit</option>
+      <option value="follow">Follow Root</option>
+    </select>
+  </div>
+  <div class="ctrl-row">
+    <label>Reset Camera</label>
+    <button class="file-btn" id="ctrl-reset-cam" style="padding:4px 12px;font-size:11px">Reset</button>
+  </div>
+</div>
+
+<!-- Playback bar -->
+<div id="playback">
+  <button id="play-btn">▶</button>
+  <input type="range" id="timeline" min="0" max="100" value="0" step="1" />
+  <span id="frame-info">0 / 0 · 0.0s</span>
+</div>
+
+<!-- Info badge -->
+<div id="info-badge"></div>
+
+<!-- Reopen button -->
+<button id="reopen-btn">⊕ Open File</button>
+
+</body>
+</html>
